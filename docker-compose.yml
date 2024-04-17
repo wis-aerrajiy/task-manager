@@ -1,0 +1,55 @@
+version: '3.1'
+
+services:
+    postgres_db:
+        container_name: postgres_db
+        image: postgres:latest
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASS}
+        ports:
+            - "5432:5432"
+        networks:
+            - trello
+    adminer:
+        container_name: adminer
+        image: adminer:latest
+        ports:
+            - "8080:8080"
+        environment:
+            ADMINER_DESIGN: ${ADMINER_DESIGN}
+        networks:
+            - trello
+
+    trello_app:
+        container_name: trello_app
+        image: trello_app:wis
+        build:
+            context: ./trello
+            dockerfile: Dockerfile
+        ports:
+            - "4000:4000"
+        depends_on:
+            - postgres_db
+        networks:
+            - trello
+        volumes:
+            - trello_source:/app
+            - /app/node_modules
+        environment:
+            - CHOKIDAR_USEPOLLING=true
+        env_file:
+            - .env
+
+networks:
+    trello:
+        driver: bridge
+
+volumes:
+    trello_source:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ./trello
